@@ -51,7 +51,10 @@ test('src/index.ts imports morgan', () => {
   const imported =
     has(indexFile, "import morgan from 'morgan'") ||
     has(indexFile, 'import morgan from "morgan"');
-  assert(imported, "Import morgan at the top of src/index.ts: import morgan from 'morgan'");
+  assert(
+    imported,
+    "Import morgan at the top of src/index.ts: import morgan from 'morgan'",
+  );
 });
 
 test('src/index.ts mounts morgan middleware', () => {
@@ -81,5 +84,4 @@ test('src/index.ts defines a custom morgan token', () => {
 // SUMMARY
 // ============================================================
 
-// Decodes to: s9l3-log
-summary('czlsMy1sb2c=');
+summary('MjQyNzU2NjQ=');

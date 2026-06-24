@@ -87,5 +87,4 @@ test('auth routes apply registerLimiter to POST /auth/register', () => {
 // SUMMARY
 // ============================================================
 
-// Decodes to: s9l4-rate
-summary('czlsNC1yYXRl');
+summary('NDcyMzU1NDk=');

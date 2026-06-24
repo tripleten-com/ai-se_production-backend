@@ -61,14 +61,14 @@ test('src/index.ts defines an isProduction flag or equivalent', () => {
 test('src/index.ts uses the environment flag to change behavior', () => {
   const hasTernary =
     has(indexFile, 'isProduction ?') ||
-    has(indexFile, "isProduction\n") ||
+    has(indexFile, 'isProduction\n') ||
     has(indexFile, 'isProduction &&') ||
     has(indexFile, "NODE_ENV === 'production' ?") ||
     has(indexFile, 'NODE_ENV === "production" ?');
   const hasConditional =
     hasTernary ||
     has(indexFile, 'if (isProduction)') ||
-    has(indexFile, "if (process.env.NODE_ENV");
+    has(indexFile, 'if (process.env.NODE_ENV');
   assert(
     hasConditional,
     'Use the isProduction flag or NODE_ENV to change at least one behavior, such as a startup log message',
@@ -86,5 +86,4 @@ test('.env.example documents NODE_ENV', () => {
 // SUMMARY
 // ============================================================
 
-// Decodes to: s9l1-env
-summary('czlsMS1lbnY=');
+summary('OTkxMTk4MTI=');

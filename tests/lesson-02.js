@@ -52,7 +52,10 @@ test('src/index.ts imports cors', () => {
   const imported =
     has(indexFile, "import cors from 'cors'") ||
     has(indexFile, 'import cors from "cors"');
-  assert(imported, "Import cors at the top of src/index.ts: import cors from 'cors'");
+  assert(
+    imported,
+    "Import cors at the top of src/index.ts: import cors from 'cors'",
+  );
 });
 
 test('src/index.ts mounts cors middleware', () => {
@@ -80,5 +83,4 @@ test('.env.example documents CLIENT_ORIGIN', () => {
 // SUMMARY
 // ============================================================
 
-// Decodes to: s9l2-cors
-summary('czlsMi1jb3Jz');
+summary('NTYyMTY2Njk=');

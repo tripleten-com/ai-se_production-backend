@@ -103,5 +103,4 @@ test('createNote invalidates the cache after a successful write', () => {
 // SUMMARY
 // ============================================================
 
-// Decodes to: s9l6-cache
-summary('czlsNi1jYWNoZQ==');
+summary('MzQwNjU5MDY=');
