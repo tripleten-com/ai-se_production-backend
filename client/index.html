@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notes App</title>
+    <style>
+      @font-face {
+        font-family: 'Suisse Intl';
+        src: url('https://d2jcw3k6onjdla.cloudfront.net/fonts/suisse/SuisseIntl-Regular-WebM.woff2')
+          format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Suisse Intl';
+        src: url('https://d2jcw3k6onjdla.cloudfront.net/fonts/suisse/SuisseIntl-SemiBold-WebM.woff2')
+          format('woff2');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Suisse Intl Mono';
+        src: url('https://d2jcw3k6onjdla.cloudfront.net/fonts/suisse/SuisseIntlMono-Regular-WebS.woff2')
+          format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Suisse Intl', sans-serif;
+        font-size: 16px;
+        color: #1a1a1a;
+        background-color: #f2f1ee;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 48px 16px;
+      }
+
+      h1 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 32px;
+      }
+
+      .card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 0 0.5px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.15);
+        padding: 32px;
+        width: 100%;
+        max-width: 400px;
+        margin-bottom: 24px;
+      }
+
+      .card h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        color: rgb(0 0 0 / 0.5);
+        margin-bottom: 4px;
+      }
+
+      input {
+        display: block;
+        width: 100%;
+        height: 44px;
+        padding: 0 12px;
+        font-family: inherit;
+        font-size: 16px;
+        color: #1a1a1a;
+        background: #ffffff;
+        border: 1px solid rgb(0 0 0 / 0.14);
+        border-radius: 10px;
+        margin-bottom: 16px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      input:focus {
+        border-color: #1878dc;
+      }
+
+      button {
+        height: 44px;
+        padding: 0 20px;
+        font-family: inherit;
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+        background: #1878dc;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+
+      button:hover {
+        opacity: 0.88;
+      }
+
+      button.secondary {
+        background: #f2f1ee;
+        color: #1a1a1a;
+        border: 1px solid rgb(0 0 0 / 0.14);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 4px;
+      }
+
+      .status {
+        font-family: 'Suisse Intl Mono', monospace;
+        font-size: 14px;
+        background: #f2f1ee;
+        border-radius: 10px;
+        padding: 16px;
+        margin-top: 20px;
+        min-height: 56px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        border: 1px solid rgb(0 0 0 / 0.14);
+      }
+
+      .status.error {
+        color: #d35722;
+        background: rgb(211 87 34 / 0.06);
+        border-color: rgb(211 87 34 / 0.2);
+      }
+
+      .status.success {
+        color: #328f51;
+        background: rgb(50 143 81 / 0.06);
+        border-color: rgb(50 143 81 / 0.2);
+      }
+
+      .hint {
+        font-size: 14px;
+        color: rgb(0 0 0 / 0.5);
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Notes App</h1>
+
+    <p class="hint" style="margin-bottom: 24px;">
+      Client origin: <code id="origin"></code> &rarr; API: <code>http://localhost:3000</code>
+    </p>
+
+    <div class="card">
+      <h2>Log in</h2>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" required />
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" required />
+        <div class="actions">
+          <button type="submit">Log in</button>
+          <button type="button" class="secondary" id="register-btn">Register</button>
+        </div>
+      </form>
+      <div class="status" id="auth-status">Waiting...</div>
+      <p class="hint">Check the browser console for details.</p>
+    </div>
+
+    <div class="card">
+      <h2>Notes</h2>
+      <button type="button" id="fetch-btn">Fetch notes</button>
+      <div class="status" id="notes-status">Waiting...</div>
+      <p class="hint">Check the browser console for details.</p>
+    </div>
+
+    <script>
+      document.getElementById('origin').textContent = window.location.origin;
+
+      const API = 'http://localhost:3000';
+
+      function setStatus(el, text, type) {
+        el.textContent = text;
+        el.className = 'status ' + (type || '');
+      }
+
+      document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const status = document.getElementById('auth-status');
+
+        setStatus(status, 'Sending request...', '');
+        try {
+          const res = await fetch(`${API}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await res.json();
+          setStatus(status, JSON.stringify(data, null, 2), res.ok ? 'success' : 'error');
+        } catch (err) {
+          setStatus(status, `Error: ${err.message}`, 'error');
+        }
+      });
+
+      document.getElementById('register-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const status = document.getElementById('auth-status');
+
+        setStatus(status, 'Sending request...', '');
+        try {
+          const res = await fetch(`${API}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await res.json();
+          setStatus(status, JSON.stringify(data, null, 2), res.ok ? 'success' : 'error');
+        } catch (err) {
+          setStatus(status, `Error: ${err.message}`, 'error');
+        }
+      });
+
+      document.getElementById('fetch-btn').addEventListener('click', async () => {
+        const status = document.getElementById('notes-status');
+
+        setStatus(status, 'Sending request...', '');
+        try {
+          const res = await fetch(`${API}/notes`);
+          const data = await res.json();
+          setStatus(status, JSON.stringify(data, null, 2), res.ok ? 'success' : 'error');
+        } catch (err) {
+          setStatus(status, `Error: ${err.message}`, 'error');
+        }
+      });
+    </script>
+  </body>
+</html>
