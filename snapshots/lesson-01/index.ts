@@ -33,8 +33,8 @@ mongoose
           }),
         );
       } else {
+        console.log(`[dev] Server running at http://localhost:${PORT}`);
       }
-      console.log(`[dev] Server running at http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
