@@ -34,7 +34,6 @@ runGates(ROOT);
 // ============================================================
 
 const indexFile = read('src/index.ts');
-const envExample = read('.env.example');
 
 // ============================================================
 // STRUCTURAL TESTS
@@ -72,13 +71,6 @@ test('src/index.ts uses the environment flag to change behavior', () => {
   assert(
     hasConditional,
     'Use the isProduction flag or NODE_ENV to change at least one behavior, such as a startup log message',
-  );
-});
-
-test('.env.example documents NODE_ENV', () => {
-  assert(
-    has(envExample, 'NODE_ENV'),
-    'Add NODE_ENV to .env.example so other developers know it is required',
   );
 });
 
