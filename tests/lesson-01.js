@@ -3,7 +3,7 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { test, assert, normalize, runGates, summary } from './utils.js';
+import { test, assert, has, runGates, summary } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -14,11 +14,6 @@ function read(relPath) {
   } catch {
     return null;
   }
-}
-
-function has(content, str) {
-  if (!content) return false;
-  return normalize(content).includes(normalize(str));
 }
 
 // ============================================================
@@ -41,7 +36,7 @@ const indexFile = read('src/index.ts');
 
 test('src/index.ts reads NODE_ENV', () => {
   assert(
-    has(indexFile, 'NODE_ENV'),
+    has(indexFile, 'process.env.NODE_ENV'),
     'Read process.env.NODE_ENV in src/index.ts to detect the current environment',
   );
 });

@@ -1,9 +1,9 @@
-// Run from the project root: node tests/lesson-06.js
+// Run from the project root: node tests/lesson-07.js
 
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { test, assert, normalize, runGates, summary } from './utils.js';
+import { test, assert, has, runGates, summary } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -16,16 +16,11 @@ function read(relPath) {
   }
 }
 
-function has(content, str) {
-  if (!content) return false;
-  return normalize(content).includes(normalize(str));
-}
-
 // ============================================================
 // GATES
 // ============================================================
 
-console.log('\nLesson 06: In-Memory Caching\n');
+console.log('\nLesson 07: In-Memory Caching\n');
 
 runGates(ROOT);
 

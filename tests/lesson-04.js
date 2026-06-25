@@ -3,7 +3,7 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { test, assert, normalize, runGates, summary } from './utils.js';
+import { test, assert, has, match, hasDependency, runGates, summary } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -16,16 +16,11 @@ function read(relPath) {
   }
 }
 
-function has(content, str) {
-  if (!content) return false;
-  return normalize(content).includes(normalize(str));
-}
-
 // ============================================================
 // GATES
 // ============================================================
 
-console.log('\nLesson 04: Rate Limiting\n');
+console.log('\nLesson 04: Application Logging with Winston\n');
 
 runGates(ROOT);
 
@@ -33,53 +28,82 @@ runGates(ROOT);
 // FILE READS
 // ============================================================
 
-const rateLimitFile = read('src/middleware/rate-limit.ts');
-const authRoutesFile = read('src/routes/auth.ts');
+const loggerFile = read('src/utils/logger.ts');
+const errorHandlerFile = read('src/middleware/error.ts');
 const pkgJson = read('package.json');
 
 // ============================================================
 // STRUCTURAL TESTS
 // ============================================================
 
-test('express-rate-limit is listed as a dependency', () => {
+test('winston is listed as a dependency', () => {
   assert(
-    has(pkgJson, '"express-rate-limit"'),
-    'Install express-rate-limit: npm install express-rate-limit',
+    hasDependency(pkgJson, 'winston'),
+    'Install winston: npm install winston',
   );
 });
 
-test('src/middleware/rate-limit.ts exists', () => {
+test('src/utils/logger.ts exists', () => {
   assert(
-    rateLimitFile !== null,
-    'Create src/middleware/rate-limit.ts and define rate limiters there',
+    loggerFile !== null,
+    'Create src/utils/logger.ts and export a configured logger instance',
   );
 });
 
-test('rate-limit.ts exports loginLimiter', () => {
+test('src/utils/logger.ts imports winston', () => {
+  const imported =
+    has(loggerFile, "import winston from 'winston'") ||
+    has(loggerFile, 'import winston from "winston"');
   assert(
-    has(rateLimitFile, 'loginLimiter'),
-    'Export a loginLimiter from src/middleware/rate-limit.ts',
+    imported,
+    "Import winston at the top of src/utils/logger.ts: import winston from 'winston'",
   );
 });
 
-test('rate-limit.ts exports registerLimiter', () => {
+test('src/utils/logger.ts exports a logger', () => {
   assert(
-    has(rateLimitFile, 'registerLimiter'),
-    'Export a registerLimiter from src/middleware/rate-limit.ts with a stricter policy than loginLimiter',
+    match(loggerFile, /export\s+(const\s+logger|{\s*logger)/),
+    'Export a logger from src/utils/logger.ts: export const logger = winston.createLogger(...)',
   );
 });
 
-test('auth routes apply loginLimiter to POST /auth/login', () => {
+test('src/utils/logger.ts uses environment-aware log levels', () => {
+  const hasEnvCheck =
+    has(loggerFile, 'isProduction') || has(loggerFile, 'NODE_ENV');
   assert(
-    has(authRoutesFile, 'loginLimiter'),
-    'Import loginLimiter and add it to the POST /auth/login route in src/routes/auth.ts',
+    hasEnvCheck,
+    "Set level based on the environment — use 'debug' in development and 'info' or 'warn' in production",
   );
 });
 
-test('auth routes apply registerLimiter to POST /auth/register', () => {
+test('src/utils/logger.ts uses JSON format for production', () => {
   assert(
-    has(authRoutesFile, 'registerLimiter'),
-    'Import registerLimiter and add it to the POST /auth/register route in src/routes/auth.ts',
+    has(loggerFile, 'json()') || has(loggerFile, 'json'),
+    "Use winston.format.json() in the production format: combine(timestamp(), json())",
+  );
+});
+
+test('src/utils/logger.ts uses a Console transport', () => {
+  assert(
+    match(loggerFile, /transports\.Console/),
+    'Add a Console transport: new winston.transports.Console()',
+  );
+});
+
+test('src/middleware/error.ts imports the logger', () => {
+  const importsLogger =
+    has(errorHandlerFile, "from '../utils/logger") ||
+    has(errorHandlerFile, 'from "../utils/logger');
+  assert(
+    importsLogger,
+    "Import logger in src/middleware/error.ts: import { logger } from '../utils/logger.js'",
+  );
+});
+
+test('src/middleware/error.ts calls logger.error', () => {
+  assert(
+    has(errorHandlerFile, 'logger.error'),
+    'Call logger.error() at the start of the error handler to log the error message and context',
   );
 });
 
@@ -87,4 +111,4 @@ test('auth routes apply registerLimiter to POST /auth/register', () => {
 // SUMMARY
 // ============================================================
 
-summary('NDcyMzU1NDk=');
+summary('MjkxMDQ3MzM=');
