@@ -3,7 +3,7 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { test, assert, normalize, runGates, summary } from './utils.js';
+import { test, assert, has, match, hasDependency, runGates, summary } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -14,11 +14,6 @@ function read(relPath) {
   } catch {
     return null;
   }
-}
-
-function has(content, str) {
-  if (!content) return false;
-  return normalize(content).includes(normalize(str));
 }
 
 // ============================================================
@@ -34,6 +29,7 @@ runGates(ROOT);
 // ============================================================
 
 const indexFile = read('src/index.ts');
+const loggerFile = read('src/middleware/logger.ts');
 const pkgJson = read('package.json');
 
 // ============================================================
@@ -42,41 +38,55 @@ const pkgJson = read('package.json');
 
 test('morgan is listed as a dependency', () => {
   assert(
-    has(pkgJson, '"morgan"'),
+    hasDependency(pkgJson, 'morgan'),
     'Install morgan: npm install morgan && npm install --save-dev @types/morgan',
   );
 });
 
-test('src/index.ts imports morgan', () => {
+test('src/middleware/logger.ts exists', () => {
+  assert(
+    loggerFile !== null,
+    'Create src/middleware/logger.ts to hold the morgan configuration',
+  );
+});
+
+test('src/middleware/logger.ts imports morgan', () => {
   const imported =
-    has(indexFile, "import morgan from 'morgan'") ||
-    has(indexFile, 'import morgan from "morgan"');
+    has(loggerFile, "import morgan from 'morgan'") ||
+    has(loggerFile, 'import morgan from "morgan"');
   assert(
     imported,
-    "Import morgan at the top of src/index.ts: import morgan from 'morgan'",
+    "Import morgan in src/middleware/logger.ts: import morgan from 'morgan'",
   );
 });
 
-test('src/index.ts mounts morgan middleware', () => {
+test('src/middleware/logger.ts exports a requestLogger', () => {
   assert(
-    has(indexFile, 'app.use(morgan('),
-    'Mount morgan in src/index.ts: app.use(morgan(...))',
+    match(loggerFile, /export\s+(const\s+requestLogger|{\s*requestLogger)/),
+    'Export a requestLogger from src/middleware/logger.ts: export const requestLogger = morgan(...)',
   );
 });
 
-test('src/index.ts uses different log formats for dev and production', () => {
+test('src/middleware/logger.ts uses different log formats for dev and production', () => {
   const hasCombined =
-    has(indexFile, "'combined'") || has(indexFile, '"combined"');
+    has(loggerFile, "'combined'") || has(loggerFile, '"combined"');
   assert(
     hasCombined,
     "Configure morgan to use 'combined' format in production and 'dev' in development",
   );
 });
 
-test('src/index.ts defines a custom morgan token', () => {
+test('src/middleware/logger.ts defines a custom morgan token', () => {
   assert(
-    has(indexFile, 'morgan.token('),
-    'Add a custom morgan token with morgan.token(...) for the auth-status field',
+    match(loggerFile, /morgan\.token\(/),
+    'Add a custom morgan token with morgan.token(...) for the user-id field',
+  );
+});
+
+test('src/index.ts registers requestLogger', () => {
+  assert(
+    match(indexFile, /app\.use\(\s*requestLogger/),
+    'Register the requestLogger middleware in src/index.ts: app.use(requestLogger)',
   );
 });
 

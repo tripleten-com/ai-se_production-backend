@@ -13,7 +13,8 @@
     "test:02": "node tests/lesson-02.js",
     "test:03": "node tests/lesson-03.js",
     "test:04": "node tests/lesson-04.js",
-    "test:06": "node tests/lesson-06.js"
+    "test:05": "node tests/lesson-05.js",
+    "test:07": "node tests/lesson-07.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

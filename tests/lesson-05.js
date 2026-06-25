@@ -1,4 +1,4 @@
-// Run from the project root: node tests/lesson-02.js
+// Run from the project root: node tests/lesson-05.js
 
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -7,7 +7,6 @@ import {
   test,
   assert,
   has,
-  match,
   hasDependency,
   checkBehavior,
   incrementPass,
@@ -32,7 +31,7 @@ function read(relPath) {
 // GATES
 // ============================================================
 
-console.log('\nLesson 02: CORS\n');
+console.log('\nLesson 05: Rate Limiting\n');
 
 runGates(ROOT);
 
@@ -40,49 +39,53 @@ runGates(ROOT);
 // FILE READS
 // ============================================================
 
-const indexFile = read('src/index.ts');
+const rateLimitFile = read('src/middleware/rate-limit.ts');
+const authRoutesFile = read('src/routes/auth.ts');
 const pkgJson = read('package.json');
-const envExample = read('.env.example');
 
 // ============================================================
 // STRUCTURAL TESTS
 // ============================================================
 
-test('cors is listed as a dependency', () => {
+test('express-rate-limit is listed as a dependency', () => {
   assert(
-    hasDependency(pkgJson, 'cors'),
-    'Install cors: npm install cors && npm install --save-dev @types/cors',
+    hasDependency(pkgJson, 'express-rate-limit'),
+    'Install express-rate-limit: npm install express-rate-limit',
   );
 });
 
-test('src/index.ts imports cors', () => {
-  const imported =
-    has(indexFile, "import cors from 'cors'") ||
-    has(indexFile, 'import cors from "cors"');
+test('src/middleware/rate-limit.ts exists', () => {
   assert(
-    imported,
-    "Import cors at the top of src/index.ts: import cors from 'cors'",
+    rateLimitFile !== null,
+    'Create src/middleware/rate-limit.ts and define rate limiters there',
   );
 });
 
-test('src/index.ts mounts cors middleware', () => {
+test('rate-limit.ts exports loginLimiter', () => {
   assert(
-    match(indexFile, /app\.use\(\s*cors\(/),
-    'Mount cors middleware in src/index.ts: app.use(cors({ ... }))',
+    has(rateLimitFile, 'loginLimiter'),
+    'Export a loginLimiter from src/middleware/rate-limit.ts',
   );
 });
 
-test('cors origin reads from CLIENT_ORIGIN env var', () => {
+test('rate-limit.ts exports registerLimiter', () => {
   assert(
-    has(indexFile, 'CLIENT_ORIGIN'),
-    'Set the allowed origin from process.env.CLIENT_ORIGIN instead of a hardcoded string',
+    has(rateLimitFile, 'registerLimiter'),
+    'Export a registerLimiter from src/middleware/rate-limit.ts with a stricter policy than loginLimiter',
   );
 });
 
-test('.env.example documents CLIENT_ORIGIN', () => {
+test('auth routes apply loginLimiter to POST /auth/login', () => {
   assert(
-    has(envExample, 'CLIENT_ORIGIN='),
-    'Add CLIENT_ORIGIN=http://localhost:5500 to .env.example so other developers know it is required',
+    has(authRoutesFile, 'loginLimiter'),
+    'Import loginLimiter and add it to the POST /auth/login route in src/routes/auth.ts',
+  );
+});
+
+test('auth routes apply registerLimiter to POST /auth/register', () => {
+  assert(
+    has(authRoutesFile, 'registerLimiter'),
+    'Import registerLimiter and add it to the POST /auth/register route in src/routes/auth.ts',
   );
 });
 
@@ -92,13 +95,13 @@ test('.env.example documents CLIENT_ORIGIN', () => {
 
 {
   const hints = {
-    'allows requests from CLIENT_ORIGIN':
-      'Set cors({ origin: process.env.CLIENT_ORIGIN }) — make sure CLIENT_ORIGIN is in your .env file',
-    'does not allow requests from unlisted origins':
-      'Set origin to CLIENT_ORIGIN specifically, not a wildcard (*)',
+    'login endpoint returns 401 for bad credentials (not blocked yet)':
+      'Make sure the login route is reachable and returns 401 for wrong credentials',
+    'login endpoint returns 429 after exceeding the request limit':
+      'Apply loginLimiter to POST /auth/login in src/routes/auth.ts',
   };
 
-  const result = checkBehavior('tests/lesson-02.behavior.js');
+  const result = checkBehavior('tests/lesson-05.behavior.js');
 
   if (result.serverDown) {
     console.log(
@@ -122,4 +125,4 @@ test('.env.example documents CLIENT_ORIGIN', () => {
 // SUMMARY
 // ============================================================
 
-summary('NTYyMTY2Njk=');
+summary('NDcyMzU1NDk=');
