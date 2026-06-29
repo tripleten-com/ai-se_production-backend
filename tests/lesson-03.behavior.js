@@ -9,7 +9,7 @@ import 'dotenv/config';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const TSX = resolve(ROOT, 'node_modules/.bin/tsx');
+const TSX = resolve(ROOT, 'node_modules/.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
 // Use a dedicated port so these tests can run while the dev server (port 3000)
 // is still up. Students can override with TEST_PORT if needed.
 const TEST_PORT = process.env.TEST_PORT ?? 3999;
@@ -80,6 +80,11 @@ function serverRequestLog(nodeEnv, path = '/') {
     proc.stderr.on('data', (chunk) => {
       output += chunk.toString();
     });
+
+    // Prevent unhandled 'error' events (e.g. ENOENT on Windows) from crashing
+    // the process. The 'close' event fires after 'error', so output is still
+    // collected there.
+    proc.on('error', () => {});
 
     // Resolve only after the process exits and all stdio streams are closed,
     // so we never read output before the final buffers are flushed.
