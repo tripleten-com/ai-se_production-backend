@@ -1,12 +1,14 @@
 // Run from the project root: node tests/lesson-07.js
 
 import { readFileSync } from 'fs';
+import { spawnSync } from 'child_process';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { test, assert, has, runGates, summary } from './utils.js';
+import { test, assert, has, match, runGates, summary } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
+const TSX = resolve(ROOT, 'node_modules/.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
 
 function read(relPath) {
   try {
@@ -63,10 +65,26 @@ test('cache.ts exports deleteCacheValue', () => {
   );
 });
 
-test('getCacheValue or setCacheValue accepts a ttlMs parameter', () => {
+test('setCacheValue stores the TTL — short TTLs expire, long TTLs persist', () => {
+  const result = spawnSync(TSX, ['tests/cache-ttl.ts'], { cwd: ROOT, encoding: 'utf8' });
   assert(
-    has(cacheFile, 'ttlMs'),
-    'Update getCacheValue or setCacheValue to accept an optional ttlMs parameter so callers can set per-route TTLs',
+    result.status === 0,
+    'setCacheValue must store the ttlMs with the cache entry and getCacheValue must use it. ' +
+      (result.stderr?.trim() || 'Run `node_modules/.bin/tsx tests/cache-ttl.ts` to see the failure details.'),
+  );
+});
+
+test('default TTL is 60 seconds', () => {
+  assert(
+    has(cacheFile, '60 * 1000') || has(cacheFile, '60000'),
+    'Define a module-level default TTL of 60 seconds: const TTL_MS = 60 * 1000',
+  );
+});
+
+test('getNotes passes a custom TTL when calling setCacheValue', () => {
+  assert(
+    match(notesController, /setCacheValue\s*\([^,]+,[^,]+,\s*[\d\s*]+\)/),
+    'Pass a TTL as the third argument to setCacheValue in getNotes, e.g.: setCacheValue(cacheKey, response, 30 * 1000)',
   );
 });
 

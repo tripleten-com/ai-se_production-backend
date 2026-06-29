@@ -3,7 +3,19 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { test, assert, has, match, hasDependency, runGates, summary } from './utils.js';
+import {
+  test,
+  assert,
+  has,
+  match,
+  hasDependency,
+  checkBehavior,
+  incrementPass,
+  incrementFail,
+  incrementNotRun,
+  runGates,
+  summary,
+} from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -106,6 +118,43 @@ test('src/middleware/error.ts calls logger.error', () => {
     'Call logger.error() at the start of the error handler to log the error message and context',
   );
 });
+
+// ============================================================
+// BEHAVIORAL TESTS
+// ============================================================
+
+{
+  const hints = {
+    'dev startup log uses simple (human-readable) format':
+      "Use combine(colorize(), simple()) when NODE_ENV !== 'production' in src/utils/logger.ts. " +
+      'Expected output: info: Server started {"port":"3000","env":"development"}',
+    'production startup log uses JSON format':
+      "Use combine(timestamp(), json()) when NODE_ENV === 'production' in src/utils/logger.ts. " +
+      'Expected output: {"level":"info","message":"Server started",...}',
+    'production startup log includes a timestamp':
+      'Add timestamp() to the production format: combine(timestamp(), json()). ' +
+      'Expected the JSON log object to have a "timestamp" field.',
+  };
+
+  const result = checkBehavior('tests/lesson-04.behavior.js');
+
+  if (result.tests.length === 0) {
+    console.log(
+      'ℹ️  Behavior Tests — could not run (is MongoDB available and the server able to start?)',
+    );
+    incrementNotRun();
+  } else {
+    const icon = result.ok ? '✅' : '❌';
+    console.log(`${icon} Behavior Tests`);
+    result.tests.forEach((t) => {
+      const testIcon = t.passed ? '✅' : '❌';
+      const hint = t.passed ? '' : ` — ${hints[t.name] ?? ''}`;
+      console.log(`  ${testIcon} ${t.name}${hint}`);
+      if (t.passed) incrementPass();
+      else incrementFail();
+    });
+  }
+}
 
 // ============================================================
 // SUMMARY
