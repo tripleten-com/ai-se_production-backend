@@ -6,13 +6,13 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user';
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, name } = req.body;
+  const { email, password } = req.body;
 
-  if (!email || !password || !name) {
+  if (!email || !password) {
     res.status(400).json({
       success: false,
       data: null,
-      error: { message: 'email, password, and name are required' },
+      error: { message: 'email and password are required' },
     });
     return;
   }
@@ -20,10 +20,10 @@ export const register = async (req: Request, res: Response) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
-    const user = await User.create({ email, password: hashedPassword, name });
+    const user = await User.create({ email, password: hashedPassword });
     res.status(201).json({
       success: true,
-      data: { userId: user._id, email: user.email, name: user.name },
+      data: { userId: user._id, email: user.email },
       error: null,
     });
   } catch (err: unknown) {
@@ -78,7 +78,7 @@ export const login = async (req: Request, res: Response) => {
     success: true,
     data: {
       token,
-      user: { userId: user._id, email: user.email, name: user.name },
+      user: { userId: user._id, email: user.email },
     },
     error: null,
   });
