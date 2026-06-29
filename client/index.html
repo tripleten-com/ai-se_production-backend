@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -61,7 +61,9 @@
       .card {
         background: #ffffff;
         border-radius: 16px;
-        box-shadow: 0 0 0.5px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.15);
+        box-shadow:
+          0 0 0.5px 0 rgb(0 0 0 / 0.3),
+          0 1px 3px 0 rgb(0 0 0 / 0.15);
         padding: 32px;
         width: 100%;
         max-width: 400px;
@@ -166,8 +168,9 @@
   <body>
     <h1>Notes App</h1>
 
-    <p class="hint" style="margin-bottom: 24px;">
-      Client origin: <code id="origin"></code> &rarr; API: <code>http://localhost:3000</code>
+    <p class="hint" style="margin-bottom: 24px">
+      Client origin: <code id="origin"></code> &rarr; API:
+      <code>http://localhost:3000</code>
     </p>
 
     <div class="card">
@@ -179,7 +182,9 @@
         <input type="password" id="password" placeholder="••••••••" required />
         <div class="actions">
           <button type="submit">Log in</button>
-          <button type="button" class="secondary" id="register-btn">Register</button>
+          <button type="button" class="secondary" id="register-btn">
+            Register
+          </button>
         </div>
       </form>
       <div class="status" id="auth-status">Waiting...</div>
@@ -203,57 +208,75 @@
         el.className = 'status ' + (type || '');
       }
 
-      document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const status = document.getElementById('auth-status');
+      document
+        .getElementById('login-form')
+        .addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          const status = document.getElementById('auth-status');
 
-        setStatus(status, 'Sending request...', '');
-        try {
-          const res = await fetch(`${API}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-          });
-          const data = await res.json();
-          setStatus(status, JSON.stringify(data, null, 2), res.ok ? 'success' : 'error');
-        } catch (err) {
-          setStatus(status, `Error: ${err.message}`, 'error');
-        }
-      });
+          setStatus(status, 'Sending request...', '');
+          try {
+            const res = await fetch(`${API}/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const data = await res.json();
+            setStatus(
+              status,
+              JSON.stringify(data, null, 2),
+              res.ok ? 'success' : 'error',
+            );
+          } catch (err) {
+            setStatus(status, `Error: ${err.message}`, 'error');
+          }
+        });
 
-      document.getElementById('register-btn').addEventListener('click', async () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const status = document.getElementById('auth-status');
+      document
+        .getElementById('register-btn')
+        .addEventListener('click', async () => {
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          const status = document.getElementById('auth-status');
 
-        setStatus(status, 'Sending request...', '');
-        try {
-          const res = await fetch(`${API}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-          });
-          const data = await res.json();
-          setStatus(status, JSON.stringify(data, null, 2), res.ok ? 'success' : 'error');
-        } catch (err) {
-          setStatus(status, `Error: ${err.message}`, 'error');
-        }
-      });
+          setStatus(status, 'Sending request...', '');
+          try {
+            const res = await fetch(`${API}/auth/register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const data = await res.json();
+            setStatus(
+              status,
+              JSON.stringify(data, null, 2),
+              res.ok ? 'success' : 'error',
+            );
+          } catch (err) {
+            setStatus(status, `Error: ${err.message}`, 'error');
+          }
+        });
 
-      document.getElementById('fetch-btn').addEventListener('click', async () => {
-        const status = document.getElementById('notes-status');
+      document
+        .getElementById('fetch-btn')
+        .addEventListener('click', async () => {
+          const status = document.getElementById('notes-status');
 
-        setStatus(status, 'Sending request...', '');
-        try {
-          const res = await fetch(`${API}/notes`);
-          const data = await res.json();
-          setStatus(status, JSON.stringify(data, null, 2), res.ok ? 'success' : 'error');
-        } catch (err) {
-          setStatus(status, `Error: ${err.message}`, 'error');
-        }
-      });
+          setStatus(status, 'Sending request...', '');
+          try {
+            const res = await fetch(`${API}/notes`);
+            const data = await res.json();
+            setStatus(
+              status,
+              JSON.stringify(data, null, 2),
+              res.ok ? 'success' : 'error',
+            );
+          } catch (err) {
+            setStatus(status, `Error: ${err.message}`, 'error');
+          }
+        });
     </script>
   </body>
 </html>
