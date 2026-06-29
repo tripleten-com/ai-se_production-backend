@@ -4,11 +4,22 @@ import { readFileSync } from 'fs';
 import { spawn } from 'child_process';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { test, assert, has, hasDependency, runGates, summary } from './utils.js';
+import {
+  test,
+  assert,
+  has,
+  hasDependency,
+  runGates,
+  summary,
+} from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const TSX = resolve(ROOT, 'node_modules/.bin/tsx');
+const TSX = resolve(
+  ROOT,
+  'node_modules/.bin',
+  process.platform === 'win32' ? 'tsx.cmd' : 'tsx',
+);
 
 const TEST_PORT = 19874;
 
@@ -61,11 +72,18 @@ function withServer(fn) {
         output.includes('MongoDB connected');
       if (!started && ready) {
         started = true;
-        // Brief pause so app.listen has fired before we hit the server
-        setTimeout(() => fn().then((r) => done(r, false)).catch((e) => done(e, true)), 150);
+        // Brief pause so app.listen has fired before we hit the server.
+        setTimeout(
+          () =>
+            fn()
+              .then((r) => done(r, false))
+              .catch((e) => done(e, true)),
+          150,
+        );
       }
     });
 
+    proc.on('error', (err) => done(err, true));
     proc.on('close', () => done(new Error('Server exited unexpectedly'), true));
   });
 }
@@ -147,28 +165,40 @@ test('auth routes apply registerLimiter to POST /auth/register', () => {
 
 // All requests are sent sequentially so rate-limit counters increment
 // predictably. registerLimiter allows 5 per window; loginLimiter allows 10.
-const { registerStatuses, loginFirst6, loginAll11 } = await withServer(async () => {
-  const registerStatuses = [];
-  for (let i = 0; i < 6; i++) {
-    registerStatuses.push(await post('/auth/register', {}));
-  }
+const { registerStatuses, loginFirst6, loginAll11 } = await withServer(
+  async () => {
+    const registerStatuses = [];
+    for (let i = 0; i < 6; i++) {
+      registerStatuses.push(await post('/auth/register', {}));
+    }
 
-  const loginFirst6 = [];
-  for (let i = 0; i < 6; i++) {
-    loginFirst6.push(
-      await post('/auth/login', { email: 'ratelimit@test.com', password: 'wrong' }),
-    );
-  }
+    const loginFirst6 = [];
+    for (let i = 0; i < 6; i++) {
+      loginFirst6.push(
+        await post('/auth/login', {
+          email: 'ratelimit@test.com',
+          password: 'wrong',
+        }),
+      );
+    }
 
-  const loginExtra = [];
-  for (let i = 0; i < 5; i++) {
-    loginExtra.push(
-      await post('/auth/login', { email: 'ratelimit@test.com', password: 'wrong' }),
-    );
-  }
+    const loginExtra = [];
+    for (let i = 0; i < 5; i++) {
+      loginExtra.push(
+        await post('/auth/login', {
+          email: 'ratelimit@test.com',
+          password: 'wrong',
+        }),
+      );
+    }
 
-  return { registerStatuses, loginFirst6, loginAll11: [...loginFirst6, ...loginExtra] };
-});
+    return {
+      registerStatuses,
+      loginFirst6,
+      loginAll11: [...loginFirst6, ...loginExtra],
+    };
+  },
+);
 
 test('POST /auth/register returns 429 after exceeding registerLimiter', () => {
   assert(
