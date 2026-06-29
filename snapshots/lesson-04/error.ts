@@ -15,7 +15,7 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
-  logger.error(err.message, { err });
+  logger.error(err.message, { stack: err.stack });
   res.status(500).json({
     success: false,
     data: null,
