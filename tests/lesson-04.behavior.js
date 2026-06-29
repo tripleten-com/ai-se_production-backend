@@ -1,17 +1,23 @@
-// Behavioral tests for Lesson 04 — Rate Limiting
+// Behavioral tests for Lesson 04 — Application Logging with Winston
 // Can also be run standalone: node tests/lesson-04.behavior.js
 
-import http from 'http';
+import { spawn } from 'child_process';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
-const PORT = process.env.PORT ?? 3000;
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(__dirname, '..');
+const TSX = resolve(ROOT, 'node_modules/.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
+// Dedicated port so these tests can run alongside the dev server.
+const TEST_PORT = process.env.TEST_PORT ?? 3998;
 
 let pass = 0;
 let fail = 0;
 
-async function test(label, fn) {
+function test(label, fn) {
   try {
-    await fn();
+    fn();
     console.log(`✅ ${label}`);
     pass++;
   } catch (err) {
@@ -24,80 +30,98 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function request(path, options = {}) {
-  return new Promise((resolve, reject) => {
-    const body = options.body ?? null;
-    const req = http.request(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path,
-        method: options.method ?? 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(options.headers ?? {}),
-        },
-      },
-      (res) => {
-        res.resume();
-        resolve({ status: res.statusCode });
-      },
-    );
-    req.on('error', reject);
-    if (body) req.write(body);
-    req.end();
+// Starts the server with the given NODE_ENV, collects output until the first
+// stdout line appears (startup log), then kills the process and returns the
+// captured output.
+function startupLog(nodeEnv) {
+  return new Promise((resolve) => {
+    const proc = spawn(TSX, ['src/index.ts'], {
+      env: { ...process.env, NODE_ENV: nodeEnv, PORT: String(TEST_PORT) },
+      cwd: ROOT,
+    });
+
+    let output = '';
+    let killScheduled = false;
+
+    const scheduleKill = () => {
+      if (killScheduled) return;
+      killScheduled = true;
+      clearTimeout(fallback);
+      proc.kill();
+    };
+
+    const fallback = setTimeout(scheduleKill, 8000);
+
+    proc.stdout.on('data', (chunk) => {
+      output += chunk.toString();
+      // Brief window for any remaining startup lines, then stop.
+      setTimeout(scheduleKill, 300);
+    });
+
+    proc.stderr.on('data', (chunk) => {
+      output += chunk.toString();
+    });
+
+    proc.on('error', () => {});
+
+    proc.on('close', () => {
+      clearTimeout(fallback);
+      resolve(output);
+    });
   });
 }
 
-function postLogin() {
-  return request('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email: 'ratelimit-test@test.com', password: 'wrong' }),
+console.log('\nLesson 04: Application Logging with Winston (behavioral)\n');
+
+// Run sequentially to avoid EADDRINUSE on TEST_PORT.
+const devLog = await startupLog('development');
+const prodLog = await startupLog('production');
+
+test('dev startup log uses simple (human-readable) format', () => {
+  // winston simple() + colorize() produces:  info: Server started {...}
+  // The line containing 'Server started' should NOT be a JSON object.
+  const line = devLog.split('\n').find((l) => l.includes('Server started'));
+  assert(
+    line !== undefined && !line.trimStart().startsWith('{'),
+    'Expected the development startup log to use winston simple format, e.g.: ' +
+      'info: Server started {"port":"3000","env":"development"}\n' +
+      "Check that combine(colorize(), simple()) is used when NODE_ENV !== 'production'",
+  );
+});
+
+test('production startup log uses JSON format', () => {
+  // winston combine(timestamp(), json()) produces a JSON object per line.
+  const jsonLine = prodLog.split('\n').find((l) => {
+    try {
+      const parsed = JSON.parse(l.trim());
+      return parsed.level && parsed.message;
+    } catch {
+      return false;
+    }
   });
-}
-
-// ============================================================
-// SERVER CHECK
-// ============================================================
-
-try {
-  await request('/');
-} catch {
-  console.error(
-    '\n❌ Could not reach the server. Start it with `npm run dev` before running behavioral tests.\n',
-  );
-  process.exit(1);
-}
-
-console.log('\nLesson 04: Rate Limiting (behavioral)\n');
-
-// ============================================================
-// TESTS
-// ============================================================
-
-await test('login endpoint returns 401 for bad credentials (not blocked yet)', async () => {
-  const { status } = await postLogin();
   assert(
-    status === 401,
-    `Expected 401 for invalid credentials, got ${status}`,
+    jsonLine !== undefined,
+    'Expected the production startup log to be a JSON object, e.g.: ' +
+      '{"level":"info","message":"Server started","port":"3000","env":"production","timestamp":"..."}\n' +
+      "Check that combine(timestamp(), json()) is used when NODE_ENV === 'production'",
   );
 });
 
-await test('login endpoint returns 429 after exceeding the request limit', async () => {
-  // Fire enough requests to exceed the limit (loginLimiter allows 10 per 15 min)
-  const responses = await Promise.all(
-    Array.from({ length: 11 }, () => postLogin()),
-  );
-  const statuses = responses.map((r) => r.status);
+test('production startup log includes a timestamp', () => {
+  // timestamp() adds a "timestamp" field — its presence confirms the format is correct.
+  const jsonLine = prodLog.split('\n').find((l) => {
+    try {
+      return JSON.parse(l.trim()).timestamp !== undefined;
+    } catch {
+      return false;
+    }
+  });
   assert(
-    statuses.includes(429),
-    `Expected at least one 429 Too Many Requests after 11 rapid attempts. Got: ${statuses.join(', ')}`,
+    jsonLine !== undefined,
+    'Expected the production JSON log to include a "timestamp" field.\n' +
+      "Add timestamp() to the production format: combine(timestamp(), json())",
   );
 });
-
-// ============================================================
-// SUMMARY
-// ============================================================
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);
