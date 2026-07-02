@@ -28,6 +28,7 @@ function withServer(fn) {
     const proc = spawn(TSX, ['src/index.ts'], {
       env: { ...process.env, NODE_ENV: 'development', PORT: String(TEST_PORT) },
       cwd: ROOT,
+      shell: process.platform === 'win32',
     });
 
     let output = '';
