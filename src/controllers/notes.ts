@@ -8,7 +8,7 @@ import {
 
 export const getNotes = async (req: Request, res: Response) => {
   const cacheKey = 'notes-list';
-  const cached = getCacheValue(cacheKey, 30 * 1000);
+  const cached = getCacheValue(cacheKey);
 
   if (cached) {
     return res.status(200).json(cached);
@@ -17,7 +17,7 @@ export const getNotes = async (req: Request, res: Response) => {
   const notes = await Note.find({});
   const response = { success: true, data: notes, error: null };
 
-  setCacheValue(cacheKey, response);
+  setCacheValue(cacheKey, response, 30 * 1000);
   res.status(200).json({ success: true, data: notes, error: null });
 };
 
