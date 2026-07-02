@@ -202,6 +202,7 @@
       document.getElementById('origin').textContent = window.location.origin;
 
       const API = 'http://localhost:3000';
+      let token = null;
 
       function setStatus(el, text, type) {
         el.textContent = text;
@@ -224,6 +225,9 @@
               body: JSON.stringify({ email, password }),
             });
             const data = await res.json();
+            if (res.ok && data.data?.token) {
+              token = data.data.token;
+            }
             setStatus(
               status,
               JSON.stringify(data, null, 2),
@@ -266,7 +270,9 @@
 
           setStatus(status, 'Sending request...', '');
           try {
-            const res = await fetch(`${API}/notes`);
+            const res = await fetch(`${API}/notes`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const data = await res.json();
             setStatus(
               status,

@@ -4,8 +4,8 @@ import { auth } from '../middleware/auth.js';
 
 const router = Router();
 
-router.get('/notes', getNotes);
-router.post('/notes', createNote);
+router.get('/notes', auth, getNotes);
+router.post('/notes', auth, createNote);
 router.delete('/notes/:id', auth, deleteNote);
 
 export default router;
