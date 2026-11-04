@@ -8,7 +8,7 @@ import { test, assert, has, match, runGates, summary } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const TSX = resolve(ROOT, 'node_modules/.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
+const TSX = resolve(ROOT, 'node_modules/tsx/dist/cli.mjs');
 
 function read(relPath) {
   try {
@@ -66,11 +66,14 @@ test('cache.ts exports deleteCacheValue', () => {
 });
 
 test('setCacheValue stores the TTL — short TTLs expire, long TTLs persist', () => {
-  const result = spawnSync(TSX, ['tests/cache-ttl.ts'], { cwd: ROOT, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [TSX, 'tests/cache-ttl.ts'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
   assert(
     result.status === 0,
     'setCacheValue must store the ttlMs with the cache entry and getCacheValue must use it. ' +
-      (result.stderr?.trim() || 'Run `node_modules/.bin/tsx tests/cache-ttl.ts` to see the failure details.'),
+      (result.stderr?.trim() || 'Run `npx tsx tests/cache-ttl.ts` to see the failure details.'),
   );
 });
 

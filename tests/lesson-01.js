@@ -8,7 +8,7 @@ import { test, assert, has, runGates, summary } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const TSX = resolve(ROOT, 'node_modules/.bin/tsx');
+const TSX = resolve(ROOT, 'node_modules/tsx/dist/cli.mjs');
 
 function read(relPath) {
   try {
@@ -24,7 +24,7 @@ function read(relPath) {
 // await them sequentially.
 function startupOutput(nodeEnv) {
   return new Promise((resolve) => {
-    const proc = spawn(TSX, ['src/index.ts'], {
+    const proc = spawn(process.execPath, [TSX, 'src/index.ts'], {
       env: { ...process.env, NODE_ENV: nodeEnv },
       cwd: ROOT,
     });

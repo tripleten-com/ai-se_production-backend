@@ -15,11 +15,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const TSX = resolve(
-  ROOT,
-  'node_modules/.bin',
-  process.platform === 'win32' ? 'tsx.cmd' : 'tsx',
-);
+const TSX = resolve(ROOT, 'node_modules/tsx/dist/cli.mjs');
 
 const TEST_PORT = 19874;
 
@@ -36,10 +32,9 @@ function read(relPath) {
 // rate-limit counter behavior.
 function withServer(fn) {
   return new Promise((resolve, reject) => {
-    const proc = spawn(TSX, ['src/index.ts'], {
+    const proc = spawn(process.execPath, [TSX, 'src/index.ts'], {
       env: { ...process.env, NODE_ENV: 'development', PORT: String(TEST_PORT) },
       cwd: ROOT,
-      shell: process.platform === 'win32',
     });
 
     let output = '';

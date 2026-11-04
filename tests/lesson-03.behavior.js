@@ -9,7 +9,7 @@ import 'dotenv/config';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const TSX = resolve(ROOT, 'node_modules/.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
+const TSX = resolve(ROOT, 'node_modules/tsx/dist/cli.mjs');
 // Use a dedicated port so these tests can run while the dev server (port 3000)
 // is still up. Students can override with TEST_PORT if needed.
 const TEST_PORT = process.env.TEST_PORT ?? 3999;
@@ -39,7 +39,7 @@ function assert(condition, message) {
 // await them sequentially.
 function serverRequestLog(nodeEnv, path = '/') {
   return new Promise((resolve) => {
-    const proc = spawn(TSX, ['src/index.ts'], {
+    const proc = spawn(process.execPath, [TSX, 'src/index.ts'], {
       env: { ...process.env, NODE_ENV: nodeEnv, PORT: String(TEST_PORT) },
       cwd: ROOT,
     });
